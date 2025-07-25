@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alltec Usinagem - Sistema de Manutenção</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            100: '#d1d5db',
+                            200: '#9ca3af',
+                            300: '#6b7280',
+                            400: '#4b5563',
+                            500: '#1f2937', // Base
+                            600: '#111827',
+                            700: '#0f172a',
+                            800: '#0c0a09',
+                            900: '#000000',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .product-card {
+            transition: all 0.3s ease;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(255,255,255,0.1);
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-pending {
+            background-color: #374151;
+            color: #d1d5db;
+        }
+        .status-completed {
+            background-color: #065F46;
+            color: #d1fae5;
+        }
+        .logo {
+            font-family: 'Arial', sans-serif;
+            font-weight: 900;
+            color: #ffffff;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body class="bg-primary-900 text-gray-100">
+    <div class="container">
+        <!-- Cabeçalho -->
+        <header class="bg-primary-800 p-4 rounded-lg mb-6 shadow-lg border border-primary-700">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <div class="logo">A</div>
+                    <div>
+                        <h1 class="text-2xl font-bold">Assistência da Alltec Usinagem</h1>
+                        <p class="text-primary-200">Sistema de Gerenciamento de Manutenção</p>
+                    </div>
+                </div>
+                <div class="flex space-x-4">
+                    <button onclick="showView('dashboard')" class="px-4 py-2 bg-primary-600 rounded-lg hover:bg-primary-700 transition">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </button>
+                    <button onclick="showView('history')" class="px-4 py-2 bg-primary-600 rounded-lg hover:bg-primary-700 transition">
+                        <i class="fas fa-history mr-2"></i>Histórico
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Conteúdo Principal -->
+        <main>
+            <!-- Dashboard (Listagem de produtos) -->
+            <div id="dashboard-view" class="view">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold">Produtos em Manutenção</h2>
+                    <div class="flex space-x-4">
+                        <div class="relative">
+                            <input type="text" id="search-input" placeholder="Pesquisar produto..." 
+                                   class="pl-10 pr-4 py-2 bg-primary-800 border border-primary-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                                   onkeyup="filterProducts()">
+                            <i class="fas fa-search absolute left-3 top-3 text-primary-300"></i>
+                        </div>
+                        <button onclick="showView('add-product')" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                            <i class="fas fa-plus mr-2"></i>Novo Produto
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="products-list">
+                    <!-- Produtos serão carregados dinamicamente aqui -->
+                </div>
+            </div>
+
+            <!-- Formulário de cadastro -->
+            <div id="add-product-view" class="view hidden">
+                <div class="bg-primary-800 p-6 rounded-lg shadow-lg border border-primary-700">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">Cadastrar Novo Produto</h2>
+                        <button onclick="showView('dashboard')" class="text-primary-300 hover:text-white">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <form id="product-form" class="space-y-4">
+                        <div>
+                            <label for="product-name" class="block text-sm font-medium text-primary-200">Nome do Produto</label>
+                            <input type="text" id="product-name" required 
+                                   class="mt-1 block w-full bg-primary-700 border border-primary-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-white">
+                        </div>
+
+                        <div>
+                            <label for="product-image" class="block text-sm font-medium text-primary-200">Foto do Produto</label>
+                            <div class="mt-1 flex items-center">
+                                <input type="file" id="product-image" accept="image/*" class="hidden">
+                                <label for="product-image" class="cursor-pointer bg-primary-700 px-4 py-2 rounded-md border border-primary-600 hover:bg-primary-600 text-primary-100">
+                                    <i class="fas fa-upload mr-2"></i>Selecionar Imagem
+                                </label>
+                                <span id="file-name" class="ml-2 text-sm text-primary-300">Nenhum arquivo selecionado</span>
+                            </div>
+                            <div id="image-preview" class="mt-2 hidden">
+                                <img id="preview" class="h-32 w-32 object-cover rounded-md border border-primary-600">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="problem-description" class="block text-sm font-medium text-primary-200">Descrição do Problema</label>
+                            <textarea id="problem-description" rows="3" required 
+                                      class="mt-1 block w-full bg-primary-700 border border-primary-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-white"></textarea>
+                        </div>
+
+                        <div>
+                            <label for="arrival-date" class="block text-sm font-medium text-primary-200">Data de Chegada</label>
+                            <input type="date" id="arrival-date" 
+                                   class="mt-1 block w-full bg-primary-700 border border-primary-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-white">
+                        </div>
+
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="showView('dashboard')" class="px-4 py-2 bg-primary-700 text-primary-100 rounded-md hover:bg-primary-600 border border-primary-600">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                <i class="fas fa-save mr-2"></i>Salvar Produto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Página de histórico -->
+            <div id="history-view" class="view hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold">Histórico de Manutenções</h2>
+                    <div class="flex items-center space-x-4">
+                        <select id="history-filter" class="bg-primary-700 border border-primary-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white" onchange="filterHistory()">
+                            <option value="all">Todos</option>
+                            <option value="completed">Finalizados</option>
+                            <option value="pending">Em andamento</option>
+                        </select>
+                        <div class="relative">
+                            <input type="text" id="history-search" placeholder="Pesquisar..." 
+                                   class="pl-10 pr-4 py-2 bg-primary-700 border border-primary-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                                   onkeyup="filterHistory()">
+                            <i class="fas fa-search absolute left-3 top-3 text-primary-300"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-primary-800 rounded-lg overflow-hidden border border-primary-700">
+                        <thead class="bg-primary-700">
+                            <tr>
+                                <th class="py-3 px-4 text-left text-primary-100">Produto</th>
+                                <th class="py-3 px-4 text-left text-primary-100">Problema</th>
+                                <th class="py-3 px-4 text-left text-primary-100">Entrada</th>
+                                <th class="py-3 px-4 text-left text-primary-100">Saída</th>
+                                <th class="py-3 px-4 text-left text-primary-100">Status</th>
+                                <th class="py-3 px-4 text-left text-primary-100">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-primary-700" id="history-list">
+                            <!-- Histórico será carregado dinamicamente aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para registrar saída -->
+    <div id="delivery-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
+        <div class="bg-primary-800 p-6 rounded-lg shadow-xl w-full max-w-md border border-primary-700">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Registrar Entrega</h3>
+                <button onclick="hideModal('delivery-modal')" class="text-primary-300 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="mb-4">
+                <p id="product-name-modal" class="font-medium"></p>
+                <p id="product-problem-modal" class="text-sm text-primary-300 mt-1"></p>
+            </div>
+            <div class="mb-4">
+                <label for="departure-date" class="block text-sm font-medium text-primary-200">Data de Saída</label>
+                <input type="date" id="departure-date" 
+                       class="mt-1 block w-full bg-primary-700 border border-primary-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-white">
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button onclick="hideModal('delivery-modal')" class="px-4 py-2 bg-primary-700 text-primary-100 rounded-md hover:bg-primary-600 border border-primary-600">
+                    Cancelar
+                </button>
+                <button onclick="registerDeparture()" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                    <i class="fas fa-check mr-2"></i>Confirmar Entrega
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Banco de dados simulando com localStorage
+        const DB_KEY = 'alltec_products_db';
+        let products = JSON.parse(localStorage.getItem(DB_KEY)) || [];
+        let currentProductId = null;
+
+        // Inicialização da aplicação
+        document.addEventListener('DOMContentLoaded', function() {
+            showView('dashboard');
+            document.getElementById('product-image').addEventListener('change', handleImagePreview);
+            document.getElementById('product-form').addEventListener('submit', saveProduct);
+            document.getElementById('arrival-date').valueAsDate = new Date();
+            
+            loadProducts();
+            loadHistory();
+        });
+
+        // Funções para navegação entre views
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.add('hidden');
+            });
+            document.getElementById(`${viewId}-view`).classList.remove('hidden');
+            
+            if (viewId === 'dashboard') {
+                loadProducts();
+            } else if (viewId === 'history') {
+                loadHistory();
+            }
+        }
+
+        // Funções para manipulação do modal
+        function showModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        function hideModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        // Funções para manipulação de imagens
+        function handleImagePreview(event) {
+            const input = event.target;
+            const fileName = document.getElementById('file-name');
+            const preview = document.getElementById('preview');
+            const previewContainer = document.getElementById('image-preview');
+
+            if (input.files && input.files[0]) {
+                fileName.textContent = input.files[0].name;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    previewContainer.classList.remove('hidden');
+                }
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                fileName.textContent = 'Nenhum arquivo selecionado';
+                previewContainer.classList.add('hidden');
+            }
+        }
+
+        // Funções para manipulação de produtos
+        function saveProduct(event) {
+            event.preventDefault();
+            
+            const productName = document.getElementById('product-name').value;
+            const problemDescription = document.getElementById('problem-description').value;
+            const arrivalDate = document.getElementById('arrival-date').value;
+            const imageInput = document.getElementById('product-image');
+            
+            let imageUrl = 'https://placehold.co/600x400?text=Sem+Imagem';
+            if (imageInput.files && imageInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imageUrl = e.target.result;
+                    addProductToDB(productName, imageUrl, problemDescription, arrivalDate);
+                }
+                reader.readAsDataURL(imageInput.files[0]);
+            } else {
+                addProductToDB(productName, imageUrl, problemDescription, arrivalDate);
+            }
+        }
+
+        function addProductToDB(name, image, problem, arrivalDate) {
+            const newProduct = {
+                id: Date.now().toString(),
+                name: name,
+                image: image,
+                problem: problem,
+                arrivalDate: arrivalDate || new Date().toISOString().split('T')[0],
+                departureDate: null,
+                status: 'pending'
+            };
+            
+            products.push(newProduct);
+            saveToDB();
+            
+            showView('dashboard');
+            resetForm();
+            loadProducts();
+        }
+
+        function resetForm() {
+            document.getElementById('product-form').reset();
+            document.getElementById('file-name').textContent = 'Nenhum arquivo selecionado';
+            document.getElementById('image-preview').classList.add('hidden');
+            document.getElementById('arrival-date').valueAsDate = new Date();
+        }
+
+        function saveToDB() {
+            localStorage.setItem(DB_KEY, JSON.stringify(products));
+        }
+
+        // Funções para carregar e exibir produtos
+        function loadProducts() {
+            const pendingProducts = products.filter(p => p.status === 'pending');
+            const productsList = document.getElementById('products-list');
+            
+            productsList.innerHTML = '';
+            
+            if (pendingProducts.length === 0) {
+                productsList.innerHTML = `
+                    <div class="col-span-full text-center py-8 text-primary-400">
+                        <i class="fas fa-box-open text-4xl mb-4"></i>
+                        <p>Nenhum produto em manutenção no momento</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            pendingProducts.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card bg-primary-800 rounded-lg overflow-hidden shadow-lg border border-primary-700 hover:border-primary-600';
+                productCard.innerHTML = `
+                    <div class="relative h-48 overflow-hidden">
+                        <img src="${product.image}" alt="Produto ${product.name}" class="w-full h-full object-cover">
+                        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                            <h3 class="text-lg font-bold text-white">${product.name}</h3>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <p class="text-sm text-primary-300 mb-2">Problema: ${product.problem}</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-primary-400">Entrada: ${formatDate(product.arrivalDate)}</span>
+                            <span class="status-badge status-pending">Em andamento</span>
+                        </div>
+                        <button onclick="prepareDepartureModal('${product.id}')" 
+                                class="w-full mt-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                            <i class="fas fa-truck mr-2"></i>Registrar Saída
+                        </button>
+                    </div>
+                `;
+                productsList.appendChild(productCard);
+            });
+        }
+
+        function loadHistory() {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+            
+            if (products.length === 0) {
+                historyList.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="py-4 text-center text-primary-400">
+                            <i class="fas fa-inbox mr-2"></i>Nenhum registro de manutenção encontrado
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            filterHistory();
+        }
+
+        function filterProducts() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const productsList = document.getElementById('products-list');
+            const cards = productsList.querySelectorAll('.product-card');
+            
+            cards.forEach(card => {
+                const productName = card.querySelector('h3').textContent.toLowerCase();
+                if (productName.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function filterHistory() {
+            const filter = document.getElementById('history-filter').value;
+            const searchTerm = document.getElementById('history-search').value.toLowerCase();
+            const historyList = document.getElementById('history-list');
+            
+            historyList.innerHTML = '';
+            
+            let filteredProducts = [...products];
+            
+            // Aplicar filtro de status
+            if (filter === 'completed') {
+                filteredProducts = filteredProducts.filter(p => p.status === 'completed');
+            } else if (filter === 'pending') {
+                filteredProducts = filteredProducts.filter(p => p.status === 'pending');
+            }
+            
+            // Aplicar filtro de pesquisa
+            if (searchTerm) {
+                filteredProducts = filteredProducts.filter(p => 
+                    p.name.toLowerCase().includes(searchTerm) || 
+                    p.problem.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            if (filteredProducts.length === 0) {
+                historyList.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="py-4 text-center text-primary-400">
+                            <i class="fas fa-search mr-2"></i>Nenhum registro encontrado
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            filteredProducts.forEach(product => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-primary-700';
+                row.innerHTML = `
+                    <td class="py-3 px-4">
+                        <div class="flex items-center">
+                            <img src="${product.image}" alt="Produto ${product.name}" class="w-10 h-10 object-cover rounded mr-3">
+                            <span>${product.name}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 text-sm text-primary-300">${truncateText(product.problem, 50)}</td>
+                    <td class="py-3 px-4 text-sm">${formatDate(product.arrivalDate)}</td>
+                    <td class="py-3 px-4 text-sm">${product.departureDate ? formatDate(product.departureDate) : '-'}</td>
+                    <td class="py-3 px-4">
+                        <span class="status-badge ${product.status === 'pending' ? 'status-pending' : 'status-completed'}">
+                            ${product.status === 'pending' ? 'Em andamento' : 'Finalizado'}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">
+                        ${product.status === 'pending' ? 
+                            `<button onclick="prepareDepartureModal('${product.id}')" class="text-blue-400 hover:text-blue-300 mr-2">
+                                <i class="fas fa-truck"></i>
+                            </button>` : 
+                            ''
+                        }
+                        <button onclick="deleteProduct('${product.id}')" class="text-red-400 hover:text-red-300">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                historyList.appendChild(row);
+            });
+        }
+
+        function prepareDepartureModal(productId) {
+            currentProductId = productId;
+            const product = products.find(p => p.id === productId);
+            
+            document.getElementById('product-name-modal').textContent = product.name;
+            document.getElementById('product-problem-modal').textContent = `Problema: ${product.problem}`;
+            document.getElementById('departure-date').valueAsDate = new Date();
+            
+            showModal('delivery-modal');
+        }
+
+        function registerDeparture() {
+            const departureDate = document.getElementById('departure-date').value;
+            
+            if (!departureDate) {
+                alert('Por favor, informe a data de saída');
+                return;
+            }
+            
+            const productIndex = products.findIndex(p => p.id === currentProductId);
+            if (productIndex !== -1) {
+                products[productIndex].departureDate = departureDate;
+                products[productIndex].status = 'completed';
+                saveToDB();
+                
+                hideModal('delivery-modal');
+                loadProducts();
+                loadHistory();
+            }
+        }
+
+        function deleteProduct(productId) {
+            if (confirm('Tem certeza que deseja excluir este registro?')) {
+                products = products.filter(p => p.id !== productId);
+                saveToDB();
+                
+                if (document.getElementById('dashboard-view').classList.contains('hidden')) {
+                    loadHistory();
+                } else {
+                    loadProducts();
+                }
+            }
+        }
+
+        // Funções auxiliares
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('pt-BR');
+        }
+
+        function truncateText(text, maxLength) {
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+        }
+    </script>
+</body>
+</html>
